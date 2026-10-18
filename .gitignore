@@ -1,0 +1,5 @@
+# Keep dependencies, secrets and local notes out of Git
+node_modules
+.env
+CLAUDE.md
+EXPLICATIONS.md
