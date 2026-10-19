@@ -1,0 +1,34 @@
+name: deploy
+
+# Run the pipeline on every push to the main branch
+on:
+  push:
+    branches: [main]
+
+# Read the code and publish container images, nothing more
+permissions:
+  contents: read
+  packages: write
+
+# Image name on GitHub Container Registry (must be lowercase)
+env:
+  IMAGE: ghcr.io/ghassenzaouali/risk-gate-rehearsal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Log in to ghcr.io with the temporary token GitHub creates for each run
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build the image and push it, tagged with the commit id
+      - name: Build and push the image
+        run: |
+          docker build -t ${{ env.IMAGE }}:${{ github.sha }} .
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
