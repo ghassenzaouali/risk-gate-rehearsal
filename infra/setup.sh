@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup of the Azure resources and of the GitHub -> Azure trust (OIDC).
-# Run from Git Bash after "az login" (with MFA) and "gh auth login".
+# One-time Azure setup and GitHub -> Azure trust (OIDC). Run in Git Bash after az login and gh auth login.
 set -euo pipefail
 # Stop Git Bash from turning "/subscriptions/..." into a Windows path
 export MSYS_NO_PATHCONV=1
@@ -30,9 +29,11 @@ az containerapp create --name "$APP" --resource-group "$RESOURCE_GROUP" --enviro
 
 # 3. OIDC: an identity for GitHub Actions, trusted only for pushes on our main branch
 az identity create --name "$IDENTITY" --resource-group "$RESOURCE_GROUP" --output none
+# Ask GitHub how it names our repository in its tokens (the name includes fixed ids)
+SUBJECT_PREFIX=$(gh api "repos/$GITHUB_REPO/actions/oidc/customization/sub" --jq .sub_claim_prefix)
 az identity federated-credential create --name github-main --identity-name "$IDENTITY" \
   --resource-group "$RESOURCE_GROUP" --issuer "https://token.actions.githubusercontent.com" \
-  --subject "repo:$GITHUB_REPO:ref:refs/heads/main" --audiences "api://AzureADTokenExchange" --output none
+  --subject "$SUBJECT_PREFIX:ref:refs/heads/main" --audiences "api://AzureADTokenExchange" --output none
 
 # The identity may manage this resource group only (Contributor role)
 PRINCIPAL_ID=$(az identity show --name "$IDENTITY" --resource-group "$RESOURCE_GROUP" --query principalId --output tsv)
