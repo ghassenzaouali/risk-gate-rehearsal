@@ -48,3 +48,10 @@ jobs:
         run: |
           az containerapp update --name risk-gate --resource-group rg-risk-gate \
             --image ${{ env.IMAGE }}:${{ github.sha }} --set-env-vars APP_VERSION=${{ github.sha }}
+
+      # Smoke test: the new version must answer on /health (retries cover the cold start)
+      - name: Smoke test
+        run: |
+          FQDN=$(az containerapp show --name risk-gate --resource-group rg-risk-gate \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          curl --fail --retry 5 --retry-delay 10 --retry-all-errors "https://$FQDN/health"
