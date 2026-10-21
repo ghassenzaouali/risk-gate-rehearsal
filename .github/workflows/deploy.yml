@@ -1,9 +1,10 @@
 name: deploy
 
-# Run the pipeline on every push to the main branch
+# Test every push to main and every pull request; deploy only pushes to main
 on:
   push:
     branches: [main]
+  pull_request:
 
 # Read the code, publish images, and get an OIDC token for Azure
 permissions:
@@ -16,9 +17,21 @@ env:
   IMAGE: ghcr.io/ghassenzaouali/risk-gate-rehearsal
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-    # Only one deployment at a time (a newer push waits for the current one)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+
+  # Deploy only pushes to main, after the tests pass, one deployment at a time
+  deploy:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
     concurrency: deploy
     steps:
       - uses: actions/checkout@v7
