@@ -1,5 +1,10 @@
-// Settings of the business rules
+// Settings of the business rules: limits, risky lists and decision thresholds
 const MAX_AMOUNT = 1000000;
+const AMOUNT_THRESHOLD = 1000;
+const LOW_RISK_COUNTRIES = ["FR", "DE", "ES", "IT", "BE"];
+const HIGH_RISK_MERCHANTS = ["gambling", "crypto", "jewelry", "money_transfer"];
+const REVIEW_SCORE = 30;
+const REJECT_SCORE = 60;
 
 // Return an error message for the first invalid field, or null when the transaction is valid
 export function validateTransaction(tx) {
@@ -22,4 +27,33 @@ export function validateTransaction(tx) {
     return "cardNumber must be a string of 16 digits";
   }
   return null;
+}
+
+// Each matching rule adds its weight to the score; the thresholds turn the score into a decision
+export function evaluate(tx) {
+  const reasons = [];
+  if (!LOW_RISK_COUNTRIES.includes(tx.country)) {
+    reasons.push({ rule: "COUNTRY_RISK", weight: 25 });
+  }
+  if (tx.amount > AMOUNT_THRESHOLD) {
+    reasons.push({ rule: "AMOUNT_THRESHOLD", weight: 20 });
+  }
+  if (HIGH_RISK_MERCHANTS.includes(tx.merchantCategory)) {
+    reasons.push({ rule: "HIGH_RISK_MERCHANT", weight: 15 });
+  }
+  if (tx.channel === "online") {
+    reasons.push({ rule: "CARD_NOT_PRESENT", weight: 10 });
+  }
+
+  let score = 0;
+  for (const reason of reasons) {
+    score = score + reason.weight;
+  }
+  let decision = "APPROVED";
+  if (score >= REJECT_SCORE) {
+    decision = "REJECTED";
+  } else if (score >= REVIEW_SCORE) {
+    decision = "REVIEW";
+  }
+  return { decision, score, reasons };
 }
