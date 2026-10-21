@@ -14,8 +14,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Read JSON request bodies into req.body
+// Read JSON request bodies into req.body, and serve the web page from the public/ folder
 app.use(express.json());
+app.use(express.static("public"));
 
 // Health check: a quick way to know the server is up, and which version is running
 app.get("/health", (req, res) => {

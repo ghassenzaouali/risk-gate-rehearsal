@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY src ./src
+COPY public ./public
 
 # Start the server on port 3000 as the unprivileged "node" user, not root
 USER node

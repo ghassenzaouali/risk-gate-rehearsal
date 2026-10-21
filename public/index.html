@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transaction Risk Gate</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    form { display: grid; grid-template-columns: 12rem 1fr; gap: 0.5rem; }
+    .card { margin-top: 1rem; padding: 1rem; border: 2px solid #999; border-radius: 8px; }
+    .APPROVED { border-color: #2e7d32; background: #e8f5e9; }
+    .REVIEW { border-color: #ef6c00; background: #fff3e0; }
+    .REJECTED, .error { border-color: #c62828; background: #ffebee; }
+  </style>
+</head>
+<body>
+  <h1>Transaction Risk Gate</h1>
+  <p>Scores a card transaction: APPROVED, REVIEW or REJECTED.</p>
+
+  <!-- The transaction to score; the server checks every field -->
+  <form id="form">
+    <label for="amount">Amount</label>
+    <input id="amount" type="number" step="0.01" value="45">
+    <label for="country">Country (2 letters)</label>
+    <input id="country" value="FR">
+    <label for="merchantCategory">Merchant category</label>
+    <input id="merchantCategory" value="grocery">
+    <label for="channel">Channel</label>
+    <select id="channel">
+      <option value="in_store">in_store</option>
+      <option value="online">online</option>
+    </select>
+    <label for="cardNumber">Card number (16 digits)</label>
+    <input id="cardNumber" value="4111111111111111">
+    <button type="submit" style="grid-column: 2">Score</button>
+  </form>
+
+  <!-- The verdict of the last decision, colored by decision -->
+  <div id="verdict" class="card" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
