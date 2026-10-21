@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validateTransaction } from "../src/rules.js";
+import { validateTransaction, evaluate } from "../src/rules.js";
 
 // The "normal" demo case, which is valid; each test changes one field
 const normal = {
@@ -34,4 +34,27 @@ test("rejects an empty merchant, an unknown channel and a card that is not 16 di
 
 test("rejects a missing body", () => {
   assert.match(validateTransaction(undefined), /body/);
+});
+
+// The three demo cases of the interface, then the exact REJECTED threshold
+test("normal case: no rule matches, score 0, APPROVED", () => {
+  assert.deepEqual(evaluate(normal), { decision: "APPROVED", score: 0, reasons: [] });
+});
+
+test("suspect case: big amount, online, score 30, REVIEW", () => {
+  const result = evaluate({ ...normal, amount: 1500, merchantCategory: "electronics", channel: "online" });
+  assert.equal(result.score, 30);
+  assert.equal(result.decision, "REVIEW");
+});
+
+test("fraud case: the four rules match, score 70, REJECTED", () => {
+  const result = evaluate({ ...normal, amount: 2500, country: "US", merchantCategory: "crypto", channel: "online" });
+  assert.equal(result.score, 70);
+  assert.equal(result.decision, "REJECTED");
+});
+
+test("a score of exactly 60 is REJECTED", () => {
+  const result = evaluate({ ...normal, amount: 2000, country: "US", merchantCategory: "crypto" });
+  assert.equal(result.score, 60);
+  assert.equal(result.decision, "REJECTED");
 });
