@@ -2,17 +2,24 @@ import os from "node:os";
 import express from "express";
 import { validateTransaction, evaluate } from "./rules.js";
 
-// Port can be changed with the PORT variable (3000 by default); the instance id names this server copy
+// Settings: port (PORT variable, 3000 by default), name of this server copy, deployed version
 const port = process.env.PORT || 3000;
 const instanceId = os.hostname();
+const version = process.env.APP_VERSION || "dev";
 const app = express();
+
+// Tag every response, errors included, with the server copy that answered
+app.use((req, res, next) => {
+  res.set("X-Instance-Id", instanceId);
+  next();
+});
 
 // Read JSON request bodies into req.body
 app.use(express.json());
 
-// Health check: a quick way to know the server is up
+// Health check: a quick way to know the server is up, and which version is running
 app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", version: version });
 });
 
 // Score a transaction: 400 with the message if a field is invalid, otherwise the decision
