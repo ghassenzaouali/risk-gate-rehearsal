@@ -29,6 +29,16 @@ app.post("/api/decisions", (req, res) => {
   res.json(result);
 });
 
+// Errors: a malformed JSON body gives 400, anything else 500 (logged); the server keeps running
+app.use((err, req, res, next) => {
+  if (err.type === "entity.parse.failed") {
+    res.status(400).json({ error: "malformed JSON body" });
+    return;
+  }
+  console.error(JSON.stringify({ error: err.message, stack: err.stack }));
+  res.status(500).json({ error: "internal error" });
+});
+
 // Start listening for HTTP requests
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
