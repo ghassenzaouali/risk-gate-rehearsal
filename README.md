@@ -122,4 +122,25 @@ are less than 1 % errors and p95 under 500 ms. Replica counts come from Azure Mo
 
 ## Known limitations and possible improvements
 
-_To be completed._
+Ordered by what I would do first for a real production service.
+
+| Limitation | Possible improvement |
+|---|---|
+| No authentication: anyone with the URL can call the API | API keys or Entra ID (OAuth 2.0), and rate limiting |
+| The full card number reaches the server (never stored, but in PCI DSS scope) | receive a token from the payment provider instead of the card number |
+| 0 replicas at rest: about 25 s of cold start, and a single replica when traffic is low | at least 2 replicas at all times |
+| One environment in one region: each push to `main` goes straight to production | a staging environment with a manual approval; a second region |
+| No alerts: logs and metrics are read by hand | Azure Monitor alerts on errors and response time |
+| The smoke test checks that `/health` answers, not which version: if the new revision does not start, Azure keeps serving the old one | compare the version returned by `/health` with the commit SHA |
+| Default health probes (TCP on the port) | HTTP probes on `/health` |
+| The rules are illustrative: weights and thresholds chosen by hand | calibrate them on real fraud data |
+| No shared state, so no velocity rule ("3 payments in 1 minute with the same card"): an in-memory counter would be wrong with 2 replicas | a shared store such as Redis |
+| Decisions are only logged, not stored | a database for the history and the audit trail |
+| Infrastructure as an `az` script: it creates, it does not compare | Bicep or Terraform, applied by the pipeline |
+| Unit tests cover the rules only | API tests against a started server, and a test of the page |
+| Load test from one PC (under 1,000 requests/s): the limit was not found; 5 replicas is a cost limit | a distributed load test, then a higher `--max-replicas` |
+| No security scan of the image or the dependencies | Trivy and `npm audit` in the pipeline |
+| Actions pinned by major version (such as `@v7`); one `permissions` block for both jobs | pin each action by commit SHA; give each job only the permissions it needs |
+| The `X-Powered-By: Express` header reveals the framework | `app.disable("x-powered-by")` |
+| Every push runs the whole pipeline, even for documentation; no npm cache, so a slow registry slows it down (once, `npm ci` took 7 minutes) | `paths-ignore` for Markdown files; the npm cache of `actions/setup-node` |
+| The page is served by the backend | static hosting or a CDN for the page |
