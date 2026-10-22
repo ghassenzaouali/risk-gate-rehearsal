@@ -47,7 +47,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "internal error" });
 });
 
-// Start listening for HTTP requests
-app.listen(port, () => {
+// Start listening; on SIGTERM (stop asked by Docker or Azure), finish current requests, then exit
+const server = app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
+});
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received: finishing current requests, then exiting");
+  server.close(() => {
+    process.exit(0);
+  });
 });
