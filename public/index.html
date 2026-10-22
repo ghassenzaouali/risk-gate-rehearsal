@@ -17,6 +17,13 @@
   <h1>Transaction Risk Gate</h1>
   <p>Scores a card transaction: APPROVED, REVIEW or REJECTED.</p>
 
+  <!-- Demo cases: one click scores a known transaction with the test card -->
+  <p>
+    <button type="button" data-case="normal">Normal</button>
+    <button type="button" data-case="suspect">Suspect</button>
+    <button type="button" data-case="fraud">Fraud</button>
+  </p>
+
   <!-- The transaction to score; the server checks every field -->
   <form id="form">
     <label for="amount">Amount</label>
@@ -37,6 +44,10 @@
 
   <!-- The verdict of the last decision, colored by decision -->
   <div id="verdict" class="card" hidden></div>
+
+  <!-- The last 10 decisions, newest first -->
+  <h2>History</h2>
+  <ol id="history"></ol>
 
   <script src="app.js"></script>
 </body>
