@@ -72,7 +72,25 @@ branch only (Contributor on the resource group). It stores the three Azure ids a
 
 ## Key technical decisions
 
-_To be completed._
+Guiding rule: the simplest option that meets the requirement, with a single production dependency
+(Express).
+
+| Decision | Why | Not chosen |
+|---|---|---|
+| Node.js 22 (LTS) and Express 5 | one language for the page and the server; little code to master | Spring Boot or Flask (a second language), NestJS (classes and layers) |
+| Rules as pure functions in `src/rules.js` | tested without a server; each answer lists the rules that fired, so every decision is explainable | a machine learning model (needs training data, hard to explain) |
+| Hand-written validation, tests with `node:test` | no extra dependency | Joi or Zod, Jest |
+| One HTML page and one script, served by Express | no framework, no build; same origin, so no CORS; text shown with `textContent`, so no HTML injection | React and a separate front-end |
+| `node:22-alpine`, `npm ci --omit=dev`, `USER node` | small image, exact versions from `package-lock.json`, not run as root | `node:22` (Debian, much bigger) |
+| GitHub Actions: tests, then deployment (`needs: test`) from `main` only, one at a time | next to the code on GitHub, free for a public repository; a failing test blocks the deployment | Jenkins (a server to run), Azure DevOps (a second platform) |
+| ghcr.io, images tagged with the commit SHA | free for public images, login with the temporary `GITHUB_TOKEN`; any version can be traced and redeployed | Docker Hub (a token to store), Azure Container Registry (paid), the `latest` tag |
+| OIDC with a managed identity (`main` only, Contributor on one resource group); port and version in environment variables | no password or secret to store or rotate; the Azure ids are GitHub variables, as they are not secrets; the same image runs on a PC and on Azure | a client secret stored in GitHub |
+| Azure Container Apps (Consumption), 0 to 5 replicas, HTTP scale rule | HTTPS, scaling, logs and metrics included; no compute cost at rest (0 replicas) | App Service (billed even when idle), AKS (a cluster to operate), Container Instances (no autoscaling) |
+| No state kept in memory between requests | any replica can answer any request, so scaling needs no code change | in-memory counters (wrong as soon as there are 2 replicas) |
+| JSON errors (`400`, `500`) without crashing; graceful stop on SIGTERM; smoke test on `/health` | bad input does not break the service; requests in progress finish before a replica stops (tested); the pipeline fails if the app does not answer | — |
+| One JSON log line per decision on stdout, card masked; `X-Instance-Id` header; version in `/health` | searchable in Log Analytics with KQL; shows which replica answered and which version runs; the full card number is never returned, logged or stored (PCI DSS) | a logging library (pino, winston) |
+| k6 for the load test | scripted in JavaScript, a single binary, pass/fail thresholds | JMeter, Locust, Azure Load Testing (paid) |
+| One `az` script for the infrastructure, run once | short and readable | Bicep or Terraform (see the limitations) |
 
 ## System behavior under load
 
